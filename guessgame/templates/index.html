@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guessing Game</title>
+    <style>
+        @font-face {
+            font-family: 'Broadway';
+            src: url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap');
+        }
+
+        body {
+            font-family: 'Georgia Pro', serif;
+            font-size: 16px;
+            background-color: lightSkyBlue;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            border: 1px solid black;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            font-size: 28px;
+            font-family: 'Broadway', sans-serif;
+            margin-bottom: 10px;
+        }
+        h2 {
+            font-size: 14px;
+            font-weight: normal;
+            margin-bottom: 20px;
+        }
+        input[type="number"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #guesses {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Guessing Game</h1>
+        <h2>Guess a number from 1 to 20</h2>
+        <form id="guessForm">
+            <input type="number" id="guess" name="guess" min="1" max="20" required>
+            <button type="submit">Submit Guess</button>
+            <button type="button" id="restartButton">Restart Game</button>
+        </form>
+        <div id="result"></div>
+        <div id="guesses"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('guessForm');
+        const resultDiv = document.getElementById('result');
+        const guessesDiv = document.getElementById('guesses');
+        const restartButton = document.getElementById('restartButton');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const guess = formData.get('guess');
+
+            try {
+                const response = await fetch('/guess', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({ guess: guess })
+                });
+
+                const data = await response.json();
+                resultDiv.textContent = data.message;
+                guessesDiv.textContent = 'Your guesses: ' + data.guesses.join(', ');
+
+                if (data.game_over) {
+                    form.querySelector('button[type="submit"]').disabled = true;
+                    form.querySelector('input').disabled = true;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        restartButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/restart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+
+                const data = await response.json();
+                resultDiv.textContent = data.message;
+                guessesDiv.textContent = '';
+                form.querySelector('button[type="submit"]').disabled = false;
+                form.querySelector('input').disabled = false;
+                form.reset();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
