@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .buttons button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculator</h1>
+        <form id="calculatorForm">
+            <div>
+                <label for="num1">Number 1:</label>
+                <input type="number" step="any" id="num1" name="num1" required>
+            </div>
+            <div>
+                <label for="num2">Number 2:</label>
+                <input type="number" step="any" id="num2" name="num2">
+            </div>
+            <div class="buttons">
+                <button type="button" onclick="performOperation('add')">Add</button>
+                <button type="button" onclick="performOperation('subtract')">Subtract</button>
+                <button type="button" onclick="performOperation('multiply')">Multiply</button>
+                <button type="button" onclick="performOperation('divide')">Divide</button>
+                <button type="button" onclick="performOperation('square')">Square</button>
+                <button type="button" onclick="performOperation('sqrt')">Square Root</button>
+                <button type="button" onclick="performOperation('binary')">To Binary</button>
+                <button type="button" onclick="performOperation('sin')">Sin</button>
+                <button type="button" onclick="performOperation('cos')">Cos</button>
+                <button type="button" onclick="performOperation('tan')">Tan</button>
+                <button type="button" onclick="clearForm()">Clear</button>
+            </div>
+        </form>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+
+        async function performOperation(operation) {
+            const form = document.getElementById('calculatorForm');
+            const formData = new FormData(form);
+            const num1 = formData.get('num1');
+            const num2 = formData.get('num2');
+
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ num1, num2, operation })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.textContent = `Result: ${data.result}`;
+                } else {
+                    resultDiv.textContent = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Error: Unable to perform calculation.';
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('calculatorForm').reset();
+            resultDiv.textContent = '';
+        }
+    </script>
+</body>
+</html>
