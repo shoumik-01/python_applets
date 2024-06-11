@@ -79,7 +79,7 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    resultDiv.textContent = `Result: ${data.result}`;
+                    resultDiv.textContent = `Result: ${data.operationPerformed}`;
                 } else {
                     resultDiv.textContent = `Error: ${data.error}`;
                 }
