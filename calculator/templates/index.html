@@ -3,63 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
+    <title>Advanced Calculator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
         }
         .container {
-            max-width: 400px;
+            max-width: 1000px;
             margin: 0 auto;
+            display: grid;
+            grid-template-columns: 60% 40%;
+            gap: 20px;
+            background-color: #ffffff;
             padding: 20px;
-            border: 1px solid #ccc;
             border-radius: 10px;
-            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .result {
-            margin-top: 20px;
+        .input-section {
+            padding-right: 20px;
+            border-right: 1px solid #eee;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
             font-weight: bold;
         }
-        .buttons {
-            margin-top: 20px;
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .button-group h3 {
+            grid-column: 1 / -1;
+            margin: 5px 0;
+            color: #444;
+            font-size: 0.9em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
         }
         .buttons button {
-            margin: 5px;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+        .basic-ops button {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+        .advanced-ops button {
+            background-color: #f3e5f5;
+            color: #6a1b9a;
+        }
+        .trig-ops button {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .conversion-ops button {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+        .buttons button:hover {
+            filter: brightness(0.95);
+            transform: translateY(-1px);
+        }
+
+        /* Calculator Display Styling */
+        .display-section {
+            position: sticky;
+            top: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            height: fit-content;
+        }
+        .display-section h2 {
+            color: #fff;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        .calculator-screen {
+            background: #263238;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            overflow: hidden;
+        }
+        .result {
+            color: #4CAF50;
+            font-size: 1.1em;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+        .error {
+            color: #ff5252;
+        }
+        .clear-btn {
+            background-color: #ff5252;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .clear-btn:hover {
+            background-color: #ff1744;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Calculator</h1>
-        <form id="calculatorForm">
-            <div>
-                <label for="num1">Number 1:</label>
-                <input type="number" step="any" id="num1" name="num1" required>
+        <div class="input-section">
+            <h2>Scientific Calculator</h2>
+            <form id="calculatorForm">
+                <div class="input-group">
+                    <label for="num1">Number 1:</label>
+                    <input type="number" step="any" id="num1" name="num1" required>
+                </div>
+                <div class="input-group">
+                    <label for="num2">Number 2:</label>
+                    <input type="number" step="any" id="num2" name="num2">
+                </div>
+
+                <div class="buttons">
+                    <div class="button-group basic-ops">
+                        <h3>Basic Operations</h3>
+                        <button type="button" onclick="performOperation('add')">Add</button>
+                        <button type="button" onclick="performOperation('subtract')">Subtract</button>
+                        <button type="button" onclick="performOperation('multiply')">Multiply</button>
+                        <button type="button" onclick="performOperation('divide')">Divide</button>
+                    </div>
+
+                    <div class="button-group advanced-ops">
+                        <h3>Advanced Operations</h3>
+                        <button type="button" onclick="performOperation('power')">Power</button>
+                        <button type="button" onclick="performOperation('square')">Square</button>
+                        <button type="button" onclick="performOperation('sqrt')">√</button>
+                        <button type="button" onclick="performOperation('factorial')">n!</button>
+                        <button type="button" onclick="performOperation('log')">Log₁₀</button>
+                        <button type="button" onclick="performOperation('ln')">Ln</button>
+                        <button type="button" onclick="performOperation('abs')">|x|</button>
+                    </div>
+
+                    <div class="button-group trig-ops">
+                        <h3>Trigonometric</h3>
+                        <button type="button" onclick="performOperation('sin')">Sin</button>
+                        <button type="button" onclick="performOperation('cos')">Cos</button>
+                        <button type="button" onclick="performOperation('tan')">Tan</button>
+                    </div>
+
+                    <div class="button-group conversion-ops">
+                        <h3>Conversions</h3>
+                        <button type="button" onclick="performOperation('binary')">Binary</button>
+                        <button type="button" onclick="performOperation('hex')">Hex</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="display-section">
+            <h2>Calculator Display</h2>
+            <div class="calculator-screen">
+                <div id="result" class="result">Ready for calculation...</div>
             </div>
-            <div>
-                <label for="num2">Number 2:</label>
-                <input type="number" step="any" id="num2" name="num2">
-            </div>
-            <div class="buttons">
-                <button type="button" onclick="performOperation('add')">Add</button>
-                <button type="button" onclick="performOperation('subtract')">Subtract</button>
-                <button type="button" onclick="performOperation('multiply')">Multiply</button>
-                <button type="button" onclick="performOperation('divide')">Divide</button>
-                <button type="button" onclick="performOperation('square')">Square</button>
-                <button type="button" onclick="performOperation('sqrt')">Square Root</button>
-                <button type="button" onclick="performOperation('binary')">To Binary</button>
-                <button type="button" onclick="performOperation('sin')">Sin</button>
-                <button type="button" onclick="performOperation('cos')">Cos</button>
-                <button type="button" onclick="performOperation('tan')">Tan</button>
-                <button type="button" onclick="clearForm()">Clear</button>
-            </div>
-        </form>
-        <div class="result" id="result"></div>
+            <button class="clear-btn" onclick="clearForm()">CLEAR (C)</button>
+        </div>
     </div>
 
     <script>
         const resultDiv = document.getElementById('result');
+        const num1Input = document.getElementById('num1');
+        const num2Input = document.getElementById('num2');
 
         async function performOperation(operation) {
             const form = document.getElementById('calculatorForm');
@@ -79,19 +217,30 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    resultDiv.textContent = `Result: ${data.operationPerformed}`;
+                    resultDiv.textContent = data.operationPerformed;
+                    resultDiv.classList.remove('error');
                 } else {
                     resultDiv.textContent = `Error: ${data.error}`;
+                    resultDiv.classList.add('error');
                 }
             } catch (error) {
                 resultDiv.textContent = 'Error: Unable to perform calculation.';
+                resultDiv.classList.add('error');
             }
         }
 
         function clearForm() {
             document.getElementById('calculatorForm').reset();
-            resultDiv.textContent = '';
+            resultDiv.textContent = 'Ready for calculation...';
+            resultDiv.classList.remove('error');
         }
+
+        // Add keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'c' || e.key === 'C') {
+                clearForm();
+            }
+        });
     </script>
 </body>
 </html>
