@@ -13,8 +13,11 @@
             --border-color: #404040;
             --hover-color: #3fcf76;
             --error-color: #ff4444;
+            --success-color: #00c853;
+            --savings-color: #ffd700;
         }
 
+        /* Base styles */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
@@ -24,17 +27,18 @@
             padding: 20px;
         }
 
-        h1 {
+        /* Typography */
+        h1, h2, h3 {
             color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
             text-align: center;
             margin-bottom: 2rem;
         }
 
-        h2 {
-            color: var(--accent-color);
-            margin-top: 2rem;
-        }
-
+        /* Layout containers */
         .calculator-container {
             max-width: 800px;
             margin: 0 auto;
@@ -44,8 +48,42 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
+        /* Form elements */
         .form-group {
             margin-bottom: 1.5rem;
+        }
+
+        .section-container {
+            background-color: rgba(74, 222, 128, 0.1);
+            padding: 1.5rem;
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--accent-color);
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .comparison-card {
+            background-color: rgba(74, 222, 128, 0.1);
+            padding: 1rem;
+            border-radius: 5px;
+            border: 1px solid var(--accent-color);
+        }
+
+        .savings-highlight {
+            color: var(--savings-color);
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 1rem;
+            text-align: center;
+            padding: 0.5rem;
+            background-color: rgba(255, 215, 0, 0.1);
+            border-radius: 5px;
         }
 
         label {
@@ -54,7 +92,7 @@
             color: var(--accent-color);
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid var(--border-color);
@@ -64,12 +102,13 @@
             font-size: 1rem;
         }
 
-        input:focus, select:focus {
+        input:focus {
             outline: none;
             border-color: var(--accent-color);
         }
 
-        button {
+        /* Buttons */
+        .btn {
             background-color: var(--accent-color);
             color: var(--bg-color);
             padding: 0.75rem 1.5rem;
@@ -81,10 +120,17 @@
             transition: background-color 0.3s;
         }
 
-        button:hover {
+        .btn:hover {
             background-color: var(--hover-color);
         }
 
+        .buttons-container {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        /* Table styles */
         .table-container {
             margin-top: 2rem;
             overflow-x: auto;
@@ -112,16 +158,7 @@
             background-color: rgba(74, 222, 128, 0.1);
         }
 
-        .buttons-container {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
+        /* Alert styles */
         .error-message {
             color: var(--error-color);
             padding: 1rem;
@@ -129,14 +166,6 @@
             border: 1px solid var(--error-color);
             border-radius: 5px;
             background-color: rgba(255, 68, 68, 0.1);
-        }
-
-        .summary {
-            margin-top: 1rem;
-            padding: 1rem;
-            background-color: rgba(74, 222, 128, 0.1);
-            border-radius: 5px;
-            border: 1px solid var(--accent-color);
         }
     </style>
 </head>
@@ -148,127 +177,117 @@
             {{ error }}
         </div>
         {% endif %}
+
         <form method="POST" action="/" id="mortgageForm">
-            <div class="form-group">
-                <label for="loan_amount">Loan Amount ($):</label>
-                <input type="number" id="loan_amount" name="loan_amount" required step="0.01" min="0"
-                       value="{{ form_data.loan_amount if form_data }}">
+            <div class="section-container">
+                <h3>Loan Details</h3>
+                <div class="form-group">
+                    <label for="loan_amount">Loan Amount ($):</label>
+                    <input type="number" id="loan_amount" name="loan_amount" required step="0.01" min="0"
+                           value="{{ form_data.loan_amount if form_data }}">
+                </div>
+                <div class="form-group">
+                    <label for="loan_term">Loan Term (years):</label>
+                    <input type="number" id="loan_term" name="loan_term" required min="1" max="40"
+                           value="{{ form_data.loan_term if form_data }}">
+                </div>
+                <div class="form-group">
+                    <label for="interest_rate">Interest Rate (%):</label>
+                    <input type="number" id="interest_rate" name="interest_rate" required step="0.01" min="0" max="30"
+                           value="{{ form_data.interest_rate if form_data }}">
+                </div>
+                <div class="form-group">
+                    <label for="remaining_term">Remaining Term (years):</label>
+                    <input type="number" id="remaining_term" name="remaining_term" required min="1" max="40"
+                           value="{{ form_data.remaining_term if form_data }}">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="loan_term">Loan Term (years):</label>
-                <input type="number" id="loan_term" name="loan_term" required min="1" max="40"
-                       value="{{ form_data.loan_term if form_data }}">
+
+            <div class="section-container">
+                <h3>Extra Payments</h3>
+                <div class="form-group">
+                    <label for="extra_payment_monthly">Monthly Extra Payment ($):</label>
+                    <input type="number" id="extra_payment_monthly" name="extra_payment_monthly" step="0.01" min="0"
+                           value="{{ form_data.extra_payment_monthly if form_data else '0' }}">
+                </div>
+                <div class="form-group">
+                    <label for="extra_payment_annual">Annual Extra Payment ($):</label>
+                    <input type="number" id="extra_payment_annual" name="extra_payment_annual" step="0.01" min="0"
+                           value="{{ form_data.extra_payment_annual if form_data else '0' }}">
+                </div>
+                <div class="form-group">
+                    <label for="extra_payment_onetime">One-time Extra Payment ($):</label>
+                    <input type="number" id="extra_payment_onetime" name="extra_payment_onetime" step="0.01" min="0"
+                           value="{{ form_data.extra_payment_onetime if form_data else '0' }}">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="interest_rate">Interest Rate (%):</label>
-                <input type="number" id="interest_rate" name="interest_rate" required step="0.01" min="0" max="30"
-                       value="{{ form_data.interest_rate if form_data }}">
-            </div>
-            <div class="form-group">
-                <label for="remaining_term">Remaining Term (years):</label>
-                <input type="number" id="remaining_term" name="remaining_term" required min="1" max="40"
-                       value="{{ form_data.remaining_term if form_data }}">
-            </div>
-            <div class="form-group">
-                <label for="repayment_option">Repayment Option:</label>
-                <select id="repayment_option" name="repayment_option" required onchange="handleRepaymentOptionChange()">
-                    <option value="normal" {% if form_data and form_data.repayment_option == 'normal' %}selected{% endif %}>Normal</option>
-                    <option value="extra_monthly" {% if form_data and form_data.repayment_option == 'extra_monthly' %}selected{% endif %}>Extra Payment (Monthly)</option>
-                    <option value="extra_annual" {% if form_data and form_data.repayment_option == 'extra_annual' %}selected{% endif %}>Extra Payment (Annually)</option>
-                    <option value="biweekly" {% if form_data and form_data.repayment_option == 'biweekly' %}selected{% endif %}>Biweekly</option>
-                </select>
-            </div>
-            <div class="form-group" id="extra_payment_group">
-                <label for="extra_payment">Extra Payment ($):</label>
-                <input type="number" id="extra_payment" name="extra_payment" step="0.01" min="0"
-                       value="{{ form_data.extra_payment if form_data }}">
-            </div>
-            <button type="submit">Calculate</button>
+
+            <button type="submit" class="btn">Calculate</button>
         </form>
 
         {% if table %}
-        <div class="summary">
-            <h3>Loan Summary</h3>
-            <p>Loan Amount: ${{ "%.2f"|format(form_data.loan_amount|float) }}</p>
-            <p>Interest Rate: {{ form_data.interest_rate }}%</p>
-            <p>Loan Term: {{ form_data.loan_term }} years</p>
-            <p>Remaining Term: {{ form_data.remaining_term }} years</p>
-            <p>Total Interest: ${{ "%.2f"|format(total_interest) }}</p>
-        </div>
-
-        <div class="table-container">
-            <h2>Amortization Table</h2>
-            <table>
-                <tr>
-                    <th>Month</th>
-                    <th>Payment</th>
-                    <th>Interest</th>
-                    <th>Principal</th>
-                    <th>Balance</th>
-                </tr>
-                {% for row in table %}
-                <tr>
-                    <td>{{ row.Month }}</td>
-                    <td>${{ "%.2f"|format(row.Payment) }}</td>
-                    <td>${{ "%.2f"|format(row.Interest) }}</td>
-                    <td>${{ "%.2f"|format(row.Principal) }}</td>
-                    <td>${{ "%.2f"|format(row.Balance) }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-
-            <form method="POST" action="/download">
-                <input type="hidden" name="loan_amount" value="{{ form_data.loan_amount }}">
-                <input type="hidden" name="loan_term" value="{{ form_data.loan_term }}">
-                <input type="hidden" name="interest_rate" value="{{ form_data.interest_rate }}">
-                <input type="hidden" name="remaining_term" value="{{ form_data.remaining_term }}">
-                <input type="hidden" name="repayment_option" value="{{ form_data.repayment_option }}">
-                <input type="hidden" name="extra_payment" value="{{ form_data.extra_payment }}">
-                <div class="buttons-container">
-                    <button type="submit">Download CSV</button>
+            {% if has_extra_payments %}
+                <div class="section-container">
+                    <h3>Payment Comparison</h3>
+                    <div class="comparison-container">
+                        <div class="comparison-card">
+                            <h4>With Extra Payments</h4>
+                            <p>Payoff Time: {{ comparison.extra_years }} years{% if comparison.extra_months > 0 %} and {{ comparison.extra_months }} months{% endif %}</p>
+                            <p>Total Interest: ${{ "%.2f"|format(total_interest) }}</p>
+                        </div>
+                        <div class="comparison-card">
+                            <h4>Without Extra Payments</h4>
+                            <p>Payoff Time: {{ comparison.normal_years }} years{% if comparison.normal_months > 0 %} and {{ comparison.normal_months }} months{% endif %}</p>
+                            <p>Total Interest: ${{ "%.2f"|format(normal_total_interest) }}</p>
+                        </div>
+                    </div>
+                    <div class="savings-highlight">
+                        Total Interest Saved: ${{ "%.2f"|format(comparison.interest_saved) }}
+                    </div>
                 </div>
-            </form>
-        </div>
+            {% else %}
+                <div class="section-container">
+                    <h3>Payment Summary</h3>
+                    <p>Payoff Time: {{ comparison.normal_years }} years{% if comparison.normal_months > 0 %} and {{ comparison.normal_months }} months{% endif %}</p>
+                    <p>Total Interest: ${{ "%.2f"|format(total_interest) }}</p>
+                </div>
+            {% endif %}
+
+            <div class="table-container">
+                <h2>Amortization Schedule</h2>
+                <form method="POST" action="/download">
+                    <input type="hidden" name="loan_amount" value="{{ form_data.loan_amount }}">
+                    <input type="hidden" name="loan_term" value="{{ form_data.loan_term }}">
+                    <input type="hidden" name="interest_rate" value="{{ form_data.interest_rate }}">
+                    <input type="hidden" name="remaining_term" value="{{ form_data.remaining_term }}">
+                    <input type="hidden" name="extra_payment_monthly" value="{{ form_data.extra_payment_monthly }}">
+                    <input type="hidden" name="extra_payment_annual" value="{{ form_data.extra_payment_annual }}">
+                    <input type="hidden" name="extra_payment_onetime" value="{{ form_data.extra_payment_onetime }}">
+                    <div class="buttons-container">
+                        <button type="submit" class="btn">Download CSV</button>
+                    </div>
+                </form>
+
+                <table>
+                    <tr>
+                        <th>Month</th>
+                        <th>Payment</th>
+                        <th>Interest</th>
+                        <th>Principal</th>
+                        <th>Balance</th>
+                    </tr>
+                    {% for row in table %}
+                    <tr>
+                        <td>{{ row.Month }}</td>
+                        <td>${{ "%.2f"|format(row.Payment) }}</td>
+                        <td>${{ "%.2f"|format(row.Interest) }}</td>
+                        <td>${{ "%.2f"|format(row.Principal) }}</td>
+                        <td>${{ "%.2f"|format(row.Balance) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
         {% endif %}
     </div>
-
-    <script>
-        function handleRepaymentOptionChange() {
-            const repaymentOption = document.getElementById('repayment_option').value;
-            const extraPaymentGroup = document.getElementById('extra_payment_group');
-            const extraPaymentInput = document.getElementById('extra_payment');
-
-            // Hide extra payment field for normal and biweekly options
-            if (repaymentOption === 'normal' || repaymentOption === 'biweekly') {
-                extraPaymentGroup.classList.add('hidden');
-                extraPaymentInput.required = false;
-                extraPaymentInput.value = '0';  // Set to 0 instead of empty string
-            }
-            // Show extra payment field for extra payment options
-            else if (repaymentOption === 'extra_monthly' || repaymentOption === 'extra_annual') {
-                extraPaymentGroup.classList.remove('hidden');
-                extraPaymentInput.required = true;
-                if (!extraPaymentInput.value) {
-                    extraPaymentInput.value = '0';
-                }
-            }
-        }
-
-        // Ensure the extra payment field is properly initialized on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            handleRepaymentOptionChange();
-
-            // Add form submission handler
-            document.getElementById('mortgageForm').addEventListener('submit', function(e) {
-                const repaymentOption = document.getElementById('repayment_option').value;
-                const extraPaymentInput = document.getElementById('extra_payment');
-
-                // Ensure extra_payment is 0 for normal and biweekly options
-                if (repaymentOption === 'normal' || repaymentOption === 'biweekly') {
-                    extraPaymentInput.value = '0';
-                }
-            });
-        });
-    </script>
 </body>
 </html>
