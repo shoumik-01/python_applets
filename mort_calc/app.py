@@ -2,150 +2,175 @@ from flask import Flask, request, render_template, send_file
 from decimal import Decimal, getcontext, InvalidOperation
 import csv
 from io import StringIO, BytesIO
+from dataclasses import dataclass
+from typing import List, Tuple, Dict, Any
 
 # Set decimal precision for financial calculations
 getcontext().prec = 12
 
 app = Flask(__name__)
 
-def validate_inputs(loan_amount, loan_term, interest_rate, remaining_term):
-    """Validate input parameters."""
-    if loan_amount <= 0:
+@dataclass
+class LoanParams:
+    """Data class to store loan parameters."""
+    loan_amount: Decimal
+    loan_term: int
+    interest_rate: Decimal
+    remaining_term: int
+    extra_payment_monthly: Decimal = Decimal('0')
+    extra_payment_annual: Decimal = Decimal('0')
+    extra_payment_onetime: Decimal = Decimal('0')
+
+def validate_inputs(params: LoanParams) -> None:
+    """Validate all input parameters."""
+    if params.loan_amount <= 0:
         raise ValueError("Loan amount must be greater than 0")
-    if loan_term <= 0 or loan_term > 40:
+    if params.loan_term <= 0 or params.loan_term > 40:
         raise ValueError("Loan term must be between 1 and 40 years")
-    if interest_rate <= 0 or interest_rate > 30:
+    if params.interest_rate <= 0 or params.interest_rate > Decimal('30'):
         raise ValueError("Interest rate must be between 0 and 30%")
-    if remaining_term <= 0 or remaining_term > loan_term:
+    if params.remaining_term <= 0 or params.remaining_term > params.loan_term:
         raise ValueError("Remaining term must be between 1 and the loan term")
 
-def calculate_payment(loan_amount, interest_rate, term):
-    """Calculate monthly payment."""
+def has_extra_payments(params: LoanParams) -> bool:
+    """Check if any extra payments are provided."""
+    return (params.extra_payment_monthly > 0 or
+            params.extra_payment_annual > 0 or
+            params.extra_payment_onetime > 0)
+
+def calculate_monthly_payment(loan_amount: Decimal, interest_rate: Decimal, term: int) -> Decimal:
+    """Calculate regular monthly payment amount."""
     if term == 0:
         return loan_amount
     monthly_rate = interest_rate / 12
     n_payments = term * 12
     return loan_amount * (monthly_rate * (1 + monthly_rate) ** n_payments) / ((1 + monthly_rate) ** n_payments - 1)
 
-def calculate_amortization(loan_amount, term, interest_rate, repayment_option, extra_payment):
-    """Calculate the amortization schedule with various repayment options."""
+def calculate_loan_balance_at_period(loan_amount: Decimal, interest_rate: Decimal,
+                                   monthly_payment: Decimal, periods: int) -> Decimal:
+    """Calculate loan balance after a given number of periods."""
     monthly_rate = interest_rate / 12
     balance = loan_amount
-    total_interest = Decimal('0')
-    table = []
 
-    if repayment_option == "biweekly":
-        # Biweekly calculations
-        # Calculate proper biweekly payment (26 payments per year)
-        yearly_payment = calculate_payment(loan_amount, interest_rate, term) * 12
-        biweekly_payment = yearly_payment / 26
-        n_payments = term * 26
+    for _ in range(periods):
+        interest_payment = balance * monthly_rate
+        principal_payment = monthly_payment - interest_payment
+        balance -= principal_payment
 
-        monthly_interest = Decimal('0')
-        monthly_principal = Decimal('0')
+    return balance
 
-        # Convert to Decimal for the power calculation
-        one = Decimal('1')
-        two = Decimal('2')
+def get_payoff_time(table: List[Dict]) -> Tuple[int, int]:
+    """Calculate the payoff time in years and months from an amortization table."""
+    total_months = len(table)
+    years = total_months // 12
+    months = total_months % 12
+    return years, months
 
-        for payment_num in range(1, n_payments + 1):
-            # Calculate effective biweekly rate using Decimal math
-            effective_biweekly_rate = (one + monthly_rate) ** (one/two) - one
-            interest_payment = balance * effective_biweekly_rate
-            principal_payment = biweekly_payment - interest_payment
+def calculate_amortization(params: LoanParams) -> Tuple[List[Dict], Decimal, List[Dict], Decimal]:
+    """
+    Calculate amortization schedules for both normal and extra payment scenarios.
+    Returns: (extra_payment_table, extra_payment_interest, normal_table, normal_interest)
+    """
+    monthly_rate = params.interest_rate / 12
 
-            # Adjust final payment if needed
-            if balance < biweekly_payment:
-                principal_payment = balance
-                biweekly_payment = balance + interest_payment
+    # Calculate normal payment schedule
+    normal_balance = params.loan_amount
+    normal_payment = calculate_monthly_payment(params.loan_amount, params.interest_rate, params.remaining_term)
+    normal_total_interest = Decimal('0')
+    normal_table = []
 
-            balance = max(Decimal('0'), balance - principal_payment)
+    for month in range(1, params.remaining_term * 12 + 1):
+        interest_payment = normal_balance * monthly_rate
+        principal_payment = normal_payment - interest_payment
+        normal_balance = max(Decimal('0'), normal_balance - principal_payment)
+        normal_total_interest += interest_payment
 
-            # Accumulate biweekly amounts
-            monthly_interest += interest_payment
-            monthly_principal += principal_payment
+        normal_table.append({
+            "Month": month,
+            "Payment": round(normal_payment, 2),
+            "Interest": round(interest_payment, 2),
+            "Principal": round(principal_payment, 2),
+            "Balance": round(normal_balance, 2)
+        })
 
-            # Record in table every two payments (monthly)
-            if payment_num % 2 == 0:
-                month = payment_num // 2
-                table.append({
-                    "Month": month,
-                    "Payment": round(biweekly_payment * 2, 2),
-                    "Interest": round(monthly_interest, 2),
-                    "Principal": round(monthly_principal, 2),
-                    "Balance": round(balance, 2)
-                })
-                total_interest += monthly_interest
-                monthly_interest = Decimal('0')
-                monthly_principal = Decimal('0')
+    # If no extra payments, return normal schedule twice
+    if not has_extra_payments(params):
+        return normal_table, normal_total_interest, normal_table, normal_total_interest
 
-            if balance == 0:
-                break
+    # Calculate schedule with extra payments
+    extra_balance = params.loan_amount
+    base_payment = normal_payment
+    extra_total_interest = Decimal('0')
+    extra_table = []
 
-    elif repayment_option == "normal":
-        # Regular monthly payment calculations
-        monthly_payment = calculate_payment(loan_amount, interest_rate, term)
-        n_payments = term * 12
+    for month in range(1, params.remaining_term * 12 + 1):
+        payment = base_payment
 
-        for month in range(1, n_payments + 1):
-            interest_payment = balance * monthly_rate
-            principal_payment = monthly_payment - interest_payment
+        # Add extra payments
+        payment += params.extra_payment_monthly
+        if month % 12 == 0:
+            payment += params.extra_payment_annual
+        if month == 1:
+            payment += params.extra_payment_onetime
 
-            # Adjust final payment if needed
-            if balance < monthly_payment:
-                principal_payment = balance
-                monthly_payment = balance + interest_payment
+        interest_payment = extra_balance * monthly_rate
+        principal_payment = payment - interest_payment
 
-            balance = max(Decimal('0'), balance - principal_payment)
-            total_interest += interest_payment
+        if extra_balance < payment:
+            principal_payment = extra_balance
+            payment = extra_balance + interest_payment
 
-            table.append({
-                "Month": month,
-                "Payment": round(monthly_payment, 2),
-                "Interest": round(interest_payment, 2),
-                "Principal": round(principal_payment, 2),
-                "Balance": round(balance, 2)
-            })
+        extra_balance = max(Decimal('0'), extra_balance - principal_payment)
+        extra_total_interest += interest_payment
 
-            if balance == 0:
-                break
+        extra_table.append({
+            "Month": month,
+            "Payment": round(payment, 2),
+            "Interest": round(interest_payment, 2),
+            "Principal": round(principal_payment, 2),
+            "Balance": round(extra_balance, 2)
+        })
 
-    else:
-        # Extra payment calculations (monthly or annual)
-        monthly_payment = calculate_payment(loan_amount, interest_rate, term)
-        n_payments = term * 12
+        if extra_balance == 0:
+            break
 
-        for month in range(1, n_payments + 1):
-            payment = monthly_payment
+    return extra_table, extra_total_interest, normal_table, normal_total_interest
 
-            # Add extra payments
-            if repayment_option == "extra_monthly":
-                payment += extra_payment
-            elif repayment_option == "extra_annual" and month % 12 == 0:
-                payment += extra_payment
+def create_loan_params_from_request(request_form: Dict) -> LoanParams:
+    """Create LoanParams object from form data."""
+    return LoanParams(
+        loan_amount=Decimal(str(request_form["loan_amount"])),
+        loan_term=int(request_form["loan_term"]),
+        interest_rate=Decimal(str(request_form["interest_rate"])) / 100,
+        remaining_term=int(request_form["remaining_term"]),
+        extra_payment_monthly=Decimal(str(request_form.get("extra_payment_monthly", "0"))),
+        extra_payment_annual=Decimal(str(request_form.get("extra_payment_annual", "0"))),
+        extra_payment_onetime=Decimal(str(request_form.get("extra_payment_onetime", "0")))
+    )
 
-            interest_payment = balance * monthly_rate
-            principal_payment = payment - interest_payment
+def adjust_loan_for_remaining_term(params: LoanParams) -> None:
+    """Adjust loan amount based on payments already made if remaining term < loan term."""
+    if params.remaining_term < params.loan_term:
+        periods_passed = (params.loan_term - params.remaining_term) * 12
+        monthly_payment = calculate_monthly_payment(params.loan_amount, params.interest_rate, params.loan_term)
+        params.loan_amount = calculate_loan_balance_at_period(
+            params.loan_amount, params.interest_rate, monthly_payment, periods_passed
+        )
 
-            if balance < payment:
-                principal_payment = balance
-                payment = balance + interest_payment
-
-            balance = max(Decimal('0'), balance - principal_payment)
-            total_interest += interest_payment
-
-            table.append({
-                "Month": month,
-                "Payment": round(payment, 2),
-                "Interest": round(interest_payment, 2),
-                "Principal": round(principal_payment, 2),
-                "Balance": round(balance, 2)
-            })
-
-            if balance == 0:
-                break
-
-    return table, total_interest
+def generate_csv_content(table: List[Dict]) -> str:
+    """Generate CSV content from amortization table."""
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Month", "Payment", "Interest", "Principal", "Balance"])
+    for row in table:
+        writer.writerow([
+            row["Month"],
+            f"{row['Payment']:.2f}",
+            f"{row['Interest']:.2f}",
+            f"{row['Principal']:.2f}",
+            f"{row['Balance']:.2f}"
+        ])
+    return output.getvalue()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -157,46 +182,38 @@ def index():
                 "loan_term": request.form["loan_term"],
                 "interest_rate": request.form["interest_rate"],
                 "remaining_term": request.form["remaining_term"],
-                "repayment_option": request.form["repayment_option"],
-                "extra_payment": request.form.get("extra_payment", "0")
+                "extra_payment_monthly": request.form.get("extra_payment_monthly", "0"),
+                "extra_payment_annual": request.form.get("extra_payment_annual", "0"),
+                "extra_payment_onetime": request.form.get("extra_payment_onetime", "0")
             }
 
             try:
-                # Convert form data for calculations
-                loan_amount = Decimal(str(form_data["loan_amount"]))
-                loan_term = int(form_data["loan_term"])
-                interest_rate = Decimal(str(form_data["interest_rate"])) / 100
-                remaining_term = int(form_data["remaining_term"])
-                repayment_option = form_data["repayment_option"]
-                extra_payment = Decimal(str(form_data["extra_payment"]))
+                # Process loan parameters
+                params = create_loan_params_from_request(form_data)
+                validate_inputs(params)
+                adjust_loan_for_remaining_term(params)
 
-                # Validate inputs
-                validate_inputs(loan_amount, loan_term, interest_rate, remaining_term)
+                # Calculate amortization schedules
+                extra_table, extra_interest, normal_table, normal_interest = calculate_amortization(params)
 
-                # Calculate initial amortization to get to the starting point of remaining term
-                if remaining_term < loan_term:
-                    periods_passed = (loan_term - remaining_term) * 12
-                    monthly_rate = interest_rate / 12
-                    monthly_payment = calculate_payment(loan_amount, interest_rate, loan_term)
-
-                    balance = loan_amount
-                    for _ in range(periods_passed):
-                        interest_payment = balance * monthly_rate
-                        principal_payment = monthly_payment - interest_payment
-                        balance -= principal_payment
-                    loan_amount = balance
-
-                # Calculate amortization schedule
-                table, total_interest = calculate_amortization(
-                    loan_amount, remaining_term, interest_rate,
-                    repayment_option, extra_payment
-                )
+                # Calculate payoff times
+                extra_years, extra_months = get_payoff_time(extra_table)
+                normal_years, normal_months = params.remaining_term, 0
 
                 return render_template(
                     "index.html",
-                    table=table,
-                    total_interest=total_interest,
-                    form_data=form_data
+                    table=extra_table,
+                    total_interest=extra_interest,
+                    normal_total_interest=normal_interest,
+                    form_data=form_data,
+                    has_extra_payments=has_extra_payments(params),
+                    comparison={
+                        "extra_years": extra_years,
+                        "extra_months": extra_months,
+                        "normal_years": normal_years,
+                        "normal_months": normal_months,
+                        "interest_saved": normal_interest - extra_interest
+                    }
                 )
 
             except (ValueError, InvalidOperation) as e:
@@ -210,51 +227,15 @@ def index():
 @app.route("/download", methods=["POST"])
 def download_csv():
     try:
-        # Collect the table data with proper error handling
-        loan_amount = Decimal(str(request.form.get("loan_amount", "0")))
-        loan_term = int(request.form.get("loan_term", "0"))
-        interest_rate = Decimal(str(request.form.get("interest_rate", "0"))) / 100
-        remaining_term = int(request.form.get("remaining_term", "0"))
-        repayment_option = request.form.get("repayment_option", "normal")
-        extra_payment = Decimal(str(request.form.get("extra_payment", "0")))
+        params = create_loan_params_from_request(request.form)
+        validate_inputs(params)
+        adjust_loan_for_remaining_term(params)
 
-        # Validate inputs
-        validate_inputs(loan_amount, loan_term, interest_rate, remaining_term)
+        table, _, _, _ = calculate_amortization(params)
 
-        # Calculate initial amortization to get to the starting point of remaining term
-        if remaining_term < loan_term:
-            periods_passed = (loan_term - remaining_term) * 12
-            monthly_rate = interest_rate / 12
-            monthly_payment = calculate_payment(loan_amount, interest_rate, loan_term)
-
-            balance = loan_amount
-            for _ in range(periods_passed):
-                interest_payment = balance * monthly_rate
-                principal_payment = monthly_payment - interest_payment
-                balance -= principal_payment
-            loan_amount = balance
-
-        # Calculate amortization schedule
-        table, _ = calculate_amortization(
-            loan_amount, remaining_term, interest_rate,
-            repayment_option, extra_payment
-        )
-
-        # Generate CSV file using BytesIO
+        # Generate and send CSV file
         output = BytesIO()
-        output_str = StringIO()
-        writer = csv.writer(output_str)
-        writer.writerow(["Month", "Payment", "Interest", "Principal", "Balance"])
-        for row in table:
-            writer.writerow([
-                row["Month"],
-                f"{row['Payment']:.2f}",
-                f"{row['Interest']:.2f}",
-                f"{row['Principal']:.2f}",
-                f"{row['Balance']:.2f}"
-            ])
-
-        output.write(output_str.getvalue().encode('utf-8'))
+        output.write(generate_csv_content(table).encode('utf-8'))
         output.seek(0)
 
         return send_file(
