@@ -40,7 +40,7 @@
 
         /* Layout containers */
         .calculator-container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
             background-color: var(--form-bg);
@@ -53,12 +53,20 @@
             margin-bottom: 1.5rem;
         }
 
+        .form-sections-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
         .section-container {
             background-color: rgba(74, 222, 128, 0.1);
             padding: 1.5rem;
             border-radius: 5px;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0;
             border: 1px solid var(--accent-color);
+            height: fit-content;
         }
 
         .comparison-container {
@@ -100,6 +108,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-size: 1rem;
+            box-sizing: border-box;
         }
 
         input:focus {
@@ -167,6 +176,15 @@
             border-radius: 5px;
             background-color: rgba(255, 68, 68, 0.1);
         }
+
+        .clear-btn {
+            background-color: var(--border-color);
+            margin-left: 1rem;
+        }
+
+        .clear-btn:hover {
+            background-color: #505050;
+        }
     </style>
 </head>
 <body>
@@ -179,50 +197,55 @@
         {% endif %}
 
         <form method="POST" action="/" id="mortgageForm">
-            <div class="section-container">
-                <h3>Loan Details</h3>
-                <div class="form-group">
-                    <label for="loan_amount">Loan Amount ($):</label>
-                    <input type="number" id="loan_amount" name="loan_amount" required step="0.01" min="0"
-                           value="{{ form_data.loan_amount if form_data }}">
+            <div class="form-sections-container">
+                <div class="section-container">
+                    <h3>Loan Details</h3>
+                    <div class="form-group">
+                        <label for="loan_amount">Loan Amount ($):</label>
+                        <input type="number" id="loan_amount" name="loan_amount" required step="0.01" min="0"
+                               value="{{ form_data.loan_amount if form_data }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="loan_term">Loan Term (years):</label>
+                        <input type="number" id="loan_term" name="loan_term" required min="1" max="40"
+                               value="{{ form_data.loan_term if form_data }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="interest_rate">Interest Rate (%):</label>
+                        <input type="number" id="interest_rate" name="interest_rate" required step="0.01" min="0" max="30"
+                               value="{{ form_data.interest_rate if form_data }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="remaining_term">Remaining Term (years):</label>
+                        <input type="number" id="remaining_term" name="remaining_term" required min="1" max="40"
+                               value="{{ form_data.remaining_term if form_data }}">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="loan_term">Loan Term (years):</label>
-                    <input type="number" id="loan_term" name="loan_term" required min="1" max="40"
-                           value="{{ form_data.loan_term if form_data }}">
-                </div>
-                <div class="form-group">
-                    <label for="interest_rate">Interest Rate (%):</label>
-                    <input type="number" id="interest_rate" name="interest_rate" required step="0.01" min="0" max="30"
-                           value="{{ form_data.interest_rate if form_data }}">
-                </div>
-                <div class="form-group">
-                    <label for="remaining_term">Remaining Term (years):</label>
-                    <input type="number" id="remaining_term" name="remaining_term" required min="1" max="40"
-                           value="{{ form_data.remaining_term if form_data }}">
+
+                <div class="section-container">
+                    <h3>Extra Payments</h3>
+                    <div class="form-group">
+                        <label for="extra_payment_monthly">Monthly Extra Payment ($):</label>
+                        <input type="number" id="extra_payment_monthly" name="extra_payment_monthly" step="0.01" min="0"
+                               value="{{ form_data.extra_payment_monthly if form_data else '0' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="extra_payment_annual">Annual Extra Payment ($):</label>
+                        <input type="number" id="extra_payment_annual" name="extra_payment_annual" step="0.01" min="0"
+                               value="{{ form_data.extra_payment_annual if form_data else '0' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="extra_payment_onetime">One-time Extra Payment ($):</label>
+                        <input type="number" id="extra_payment_onetime" name="extra_payment_onetime" step="0.01" min="0"
+                               value="{{ form_data.extra_payment_onetime if form_data else '0' }}">
+                    </div>
                 </div>
             </div>
 
-            <div class="section-container">
-                <h3>Extra Payments</h3>
-                <div class="form-group">
-                    <label for="extra_payment_monthly">Monthly Extra Payment ($):</label>
-                    <input type="number" id="extra_payment_monthly" name="extra_payment_monthly" step="0.01" min="0"
-                           value="{{ form_data.extra_payment_monthly if form_data else '0' }}">
-                </div>
-                <div class="form-group">
-                    <label for="extra_payment_annual">Annual Extra Payment ($):</label>
-                    <input type="number" id="extra_payment_annual" name="extra_payment_annual" step="0.01" min="0"
-                           value="{{ form_data.extra_payment_annual if form_data else '0' }}">
-                </div>
-                <div class="form-group">
-                    <label for="extra_payment_onetime">One-time Extra Payment ($):</label>
-                    <input type="number" id="extra_payment_onetime" name="extra_payment_onetime" step="0.01" min="0"
-                           value="{{ form_data.extra_payment_onetime if form_data else '0' }}">
-                </div>
+            <div class="buttons-container">
+                <button type="submit" class="btn">Calculate</button>
+                <button type="reset" class="btn clear-btn">Clear All</button>
             </div>
-
-            <button type="submit" class="btn">Calculate</button>
         </form>
 
         {% if table %}
@@ -289,5 +312,17 @@
             </div>
         {% endif %}
     </div>
+    <script>
+        document.querySelector('.clear-btn').addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent form reset default behavior
+            const form = document.getElementById('mortgageForm');
+            const inputs = form.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => {
+                if (input.type !== 'hidden') {
+                    input.value = input.name.includes('extra_payment') ? '0' : '';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
