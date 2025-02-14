@@ -28,7 +28,7 @@ def validate_inputs(params: LoanParams) -> None:
     if params.loan_term <= 0 or params.loan_term > 40:
         raise ValueError("Loan term must be between 1 and 40 years")
     if params.interest_rate <= 0 or params.interest_rate > Decimal('30'):
-        raise ValueError("Interest rate must be between 0 and 30%")
+        raise ValueError("Interest rate must be positive and below 30%")
     if params.remaining_term <= 0 or params.remaining_term > params.loan_term:
         raise ValueError("Remaining term must be between 1 and the loan term")
 
