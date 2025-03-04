@@ -1,0 +1,153 @@
+/* Sunset Drive - Custom Styles */
+
+:root {
+    --neon-green: #39FF14;
+    --blue: #0099FF;
+    --light-gray: #E0E0E0;
+    --dark-gray: #333333;
+    --medium-gray: #808080;
+    --light-neon-green: rgba(57, 255, 20, 0.2);
+    --light-blue: rgba(0, 153, 255, 0.2);
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #F5F5F5;
+    color: var(--dark-gray);
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* Header Styling */
+h1 {
+    color: var(--dark-gray);
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+.lead {
+    color: var(--medium-gray);
+}
+
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 12px;
+    background-color: white;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Form Styling */
+.form-control {
+    background-color: var(--light-gray);
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    color: var(--dark-gray);
+}
+
+.form-control:focus {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 0 0.25rem rgba(57, 255, 20, 0.25);
+}
+
+label {
+    font-weight: 500;
+    color: var(--dark-gray);
+}
+
+/* Button Styling */
+.btn-primary {
+    background-color: var(--dark-gray);
+    border-color: var(--dark-gray);
+    color: white;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--neon-green);
+    border-color: var(--neon-green);
+    color: var(--dark-gray);
+    box-shadow: 0 0 15px rgba(57, 255, 20, 0.5);
+}
+
+.btn-outline-secondary {
+    border-color: var(--medium-gray);
+    color: var(--dark-gray);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--neon-green);
+    border-color: var(--neon-green);
+    color: var(--dark-gray);
+}
+
+/* Chart Container */
+.chart-container {
+    background-color: var(--light-gray);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+/* Analytics Section */
+.display-6 {
+    color: var(--neon-green);
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+}
+
+.text-primary {
+    color: var(--dark-gray) !important;
+}
+
+/* Navigation Pills for Scenarios */
+.nav-pills .nav-link {
+    color: var(--dark-gray);
+    border-radius: 30px;
+    margin: 0 5px;
+    padding: 8px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--dark-gray);
+    color: white;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: rgba(51, 51, 51, 0.1);
+}
+
+/* Scenario-specific colors */
+#scenario1 .display-6 {
+    color: var(--neon-green);
+}
+
+#scenario2 .display-6 {
+    color: var(--blue);
+}
+
+/* Comparison view styling */
+#compare .card {
+    margin-bottom: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 20px;
+    }
+
+    .nav-pills .nav-link {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+}
